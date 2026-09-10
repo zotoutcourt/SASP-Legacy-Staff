@@ -1,0 +1,259 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Annuaire Staff - SASP MDT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white font-sans min-h-screen p-8">
+    <div class="max-w-7xl mx-auto space-y-8">
+        <header class="border-b border-slate-700 pb-4 flex justify-between items-center">
+            <h1 class="text-3xl font-bold text-blue-500">Registre d'Identification Staff</h1>
+            <div class="flex items-center gap-4">
+                <!-- Bouton pour ouvrir la grille -->
+                <button onclick="ouvrirGrille()" class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded font-bold transition text-sm shadow">
+                    🔍 Voir la grille des matricules
+                </button>
+                <span class="bg-green-600 text-xs px-3 py-1 rounded-full font-semibold">Connecté</span>
+            </div>
+        </header>
+
+        <!-- Formulaire d'ajout / modification -->
+        <section class="bg-slate-800 p-6 rounded-lg border border-slate-700 shadow-lg">
+            <h2 class="text-xl font-bold mb-4 text-blue-400">Ajouter / Modifier un Membre</h2>
+            <form id="form-joueur" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <input type="text" id="discord_id" placeholder="ID Discord (ex: 2841...)" class="p-2 bg-slate-700 rounded border border-slate-600 text-white" required>
+                <input type="text" id="nom_prenom" placeholder="Prénom Nom RP" class="p-2 bg-slate-700 rounded border border-slate-600 text-white" required>
+                <input type="text" id="matricule" placeholder="Matricule (ex: 01)" class="p-2 bg-slate-700 rounded border border-slate-600 text-white" required>
+                
+                <!-- Menu déroulant Statut -->
+                <select id="statut" class="p-2 bg-slate-700 rounded border border-slate-600 text-white font-semibold">
+                    <option value="SASP">Statut : SASP</option>
+                    <option value="A Wipe">Statut : A Wipe</option>
+                </select>
+
+                <input type="text" id="licence_compte" placeholder="Licence Compte" class="p-2 bg-slate-700 rounded border border-slate-600 text-white md:col-span-2">
+                <input type="text" id="licence_personnage" placeholder="Licence Personnage" class="p-2 bg-slate-700 rounded border border-slate-600 text-white md:col-span-2">
+                
+                <!-- Date de dernière vérification -->
+                <div class="md:col-span-2 flex flex-col">
+                    <label class="text-xs text-slate-400 mb-1">Dernière vérification :</label>
+                    <input type="date" id="derniere_verification" class="p-2 bg-slate-700 rounded border border-slate-600 text-white">
+                </div>
+
+                <!-- Armes -->
+                <textarea id="armes" placeholder="Armes et numéros de saisie..." class="p-2 bg-slate-700 rounded border border-slate-600 text-white md:col-span-2" rows="2"></textarea>
+                
+                <button type="submit" class="md:col-span-4 bg-blue-600 hover:bg-blue-500 p-2 rounded font-bold transition">Enregistrer / Mettre à jour</button>
+            </form>
+        </section>
+
+        <!-- Fenêtre Modale de la grille -->
+        <div id="modal-grille" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center z-50 p-4">
+            <div class="bg-slate-800 p-6 rounded-lg border border-slate-700 max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+                <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-3">
+                    <div>
+                        <h2 class="text-xl font-bold text-purple-400">État des Matricules (1 à 199)</h2>
+                        <p class="text-xs text-slate-400 mt-1 flex flex-wrap gap-3 items-center">
+                            <span><span class="inline-block w-3 h-3 bg-red-600 rounded-sm mr-1"></span> Pris</span> 
+                            <span><span class="inline-block w-3 h-3 bg-green-600 rounded-sm mr-1"></span> Disponible</span>
+                            <span><span class="inline-block w-3 h-3 bg-black border border-slate-600 rounded-sm mr-1"></span> Interdit (01, 02, 07, 87)</span>
+                        </p>
+                    </div>
+                    <button onclick="fermerGrille()" class="text-slate-400 hover:text-white font-bold text-2xl px-2">✕</button>
+                </div>
+                <!-- Grille dynamique générée par JS -->
+			<div id="grille-container" class="grid grid-cols-10 sm:grid-cols-15 md:grid-cols-20 gap-1">
+                    <!-- Rempli par le script -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Liste et Recherche -->
+        <section class="bg-slate-800 p-6 rounded-lg border border-slate-700 space-y-4 shadow-lg">
+            <h2 class="text-xl font-bold text-green-400">Liste des Membres</h2>
+            <input type="text" id="search-input" placeholder="Filtrer la liste..." class="w-full p-3 bg-slate-700 rounded border border-slate-600 text-white text-lg">
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-700 text-slate-400 text-sm">
+                            <th class="p-3">Matricule</th>
+                            <th class="p-3">Nom & Prénom</th>
+                            <th class="p-3">Statut</th>
+                            <th class="p-3">ID Discord</th>
+                            <th class="p-3">Licences</th>
+                            <th class="p-3">Armes / Saisies</th>
+                            <th class="p-3">Dernière Vérif.</th>
+                            <th class="p-3 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-table" class="text-sm">
+                        <tr><td colspan="8" class="p-3 text-slate-500 text-center">Chargement...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        let membresCache = [];
+
+        async function chargerMembres(query = '') {
+            try {
+                const res = await fetch('/api/membres/search?q=' + encodeURIComponent(query));
+                if (res.status === 401) { window.location.href = '/login.html'; return; }
+                const data = await res.json();
+                membresCache = data;
+                
+                let html = '';
+                if (!Array.isArray(data)) {
+                    document.getElementById('results-table').innerHTML = `<tr><td colspan="8" class="p-3 text-red-400 text-center">Erreur serveur</td></tr>`;
+                    return;
+                }
+
+                if (data.length === 0) {
+                    html = '<tr><td colspan="8" class="p-3 text-slate-400 text-center">Aucun membre enregistré.</td></tr>';
+                } else {
+                    data.forEach((m, index) => {
+                        const statutBadge = m.statut === 'A Wipe' 
+                            ? '<span class="bg-red-500/20 text-red-400 px-2 py-1 rounded text-xs font-bold">A Wipe</span>' 
+                            : '<span class="bg-green-500/20 text-green-400 px-2 py-1 rounded text-xs font-bold">SASP</span>';
+
+                        html += `<tr class="border-b border-slate-700/50 hover:bg-slate-700/30">
+                            <td class="p-3 font-mono text-yellow-400 font-bold">${m.matricule}</td>
+                            <td class="p-3 font-semibold">${m.nom_complet}</td>
+                            <td class="p-3">${statutBadge}</td>
+                            <td class="p-3 font-mono text-blue-400 text-xs">${m.discord_id || '-'}</td>
+                            <td class="p-3 font-mono text-xs text-slate-300">Compte: ${m.licence_compte || '-'}<br>Perso: ${m.licence_personnage || '-'}</td>
+                            <td class="p-3 text-xs text-green-300 whitespace-pre-line">${m.armes || '-'}</td>
+                            <td class="p-3 text-xs text-slate-300">${m.derniere_verification ? m.derniere_verification.split('T')[0] : '-'}</td>
+                            <td class="p-3 text-center space-x-1">
+                                <button onclick="remplirFormulaire(${index})" class="bg-amber-600 hover:bg-amber-500 text-white px-2 py-1 rounded text-xs font-bold">Modifier</button>
+                                <button onclick="supprimerMembre(${m.id})" class="bg-red-600 hover:bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">Supprimer</button>
+                            </td>
+                        </tr>`;
+                    });
+                }
+                document.getElementById('results-table').innerHTML = html;
+            } catch (err) {
+                console.error("Erreur:", err);
+            }
+        }
+
+        // --- Fonctions de la Grille des Matricules ---
+async function ouvrirGrille() {
+    document.getElementById('modal-grille').classList.remove('hidden');
+    const container = document.getElementById('grille-container');
+    container.innerHTML = '<div class="col-span-full text-center text-slate-400 py-4">Chargement des matricules...</div>';
+    
+    try {
+        const res = await fetch('/api/membres/search?q=');
+        if (!res.ok) throw new Error("Erreur réseau");
+        const data = await res.json();
+        
+        // Stocke les matricules pris (en string pour comparaison fiable)
+        const matriculesOccupes = new Set(data.map(m => String(m.matricule).trim()));
+        
+        // Liste des matricules interdits
+        const matriculesInterdits = ["1", "01", "2", "02", "7", "07", "87"];
+        
+        let html = '';
+        // Génère les matricules de 1 à 199
+        for (let i = 1; i <= 199; i++) {
+            const numStr = String(i);
+            const numPadded = i < 10 ? '0' + i : String(i);
+            
+            const estInterdit = matriculesInterdits.includes(numStr) || matriculesInterdits.includes(numPadded);
+            const estPris = matriculesOccupes.has(numStr) || matriculesOccupes.has(numPadded);
+            
+            let bgColor = '';
+            let titleText = '';
+
+            if (estInterdit) {
+                bgColor = 'bg-black text-slate-400 border-slate-700 opacity-80';
+                titleText = 'Matricule interdit';
+            } else if (estPris) {
+                bgColor = 'bg-red-600/90 text-white border-red-500';
+                titleText = 'Matricule pris';
+            } else {
+                bgColor = 'bg-green-600/90 text-white border-green-500';
+                titleText = 'Matricule disponible';
+            }
+            
+            const displayNum = i < 10 ? '0' + i : i;
+
+            // Utilisation de h-6, text-xs et p-0.5 pour condenser l'affichage
+            html += `<div class="${bgColor} p-0.5 text-center rounded font-mono font-bold text-xs flex items-center justify-center h-6 border shadow" title="${titleText}">
+                ${displayNum}
+            </div>`;
+        }
+        container.innerHTML = html;
+    } catch (err) {
+        console.error("Erreur chargement grille:", err);
+        container.innerHTML = '<div class="col-span-full text-center text-red-400 py-4">Erreur lors du chargement des données de la grille.</div>';
+    }
+}
+
+        function fermerGrille() {
+            document.getElementById('modal-grille').classList.add('hidden');
+        }
+
+        // Fermer la modale si on clique en dehors de la boîte grise
+        window.addEventListener('click', (e) => {
+            const modal = document.getElementById('modal-grille');
+            if (e.target === modal) {
+                fermerGrille();
+            }
+        });
+        // ---------------------------------------------
+
+        function remplirFormulaire(index) {
+            const m = membresCache[index];
+            document.getElementById('discord_id').value = m.discord_id || '';
+            document.getElementById('nom_prenom').value = m.nom_complet || '';
+            document.getElementById('matricule').value = m.matricule || '';
+            document.getElementById('statut').value = m.statut || 'SASP';
+            document.getElementById('licence_compte').value = m.licence_compte || '';
+            document.getElementById('licence_personnage').value = m.licence_personnage || '';
+            document.getElementById('derniere_verification').value = m.derniere_verification ? m.derni_verification.split('T')[0] : '';
+            document.getElementById('armes').value = m.armes || '';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function supprimerMembre(id) {
+            if(!confirm("Supprimer ce membre ?")) return;
+            const res = await fetch('/api/membres/' + id, { method: 'DELETE' });
+            const data = await res.json();
+            alert(data.message);
+            chargerMembres(document.getElementById('search-input').value.trim());
+        }
+
+        document.getElementById('form-joueur').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                discord_id: document.getElementById('discord_id').value,
+                nom_complet: document.getElementById('nom_prenom').value,
+                matricule: document.getElementById('matricule',).value,
+                statut: document.getElementById('statut').value,
+                licence_compte: document.getElementById('licence_compte').value,
+                licence_personnage: document.getElementById('licence_personnage').value,
+                derniere_verification: document.getElementById('derniere_verification').value,
+                armes: document.getElementById('armes').value
+            };
+            const res = await fetch('/api/membres', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            alert(data.message);
+            document.getElementById('form-joueur').reset();
+            chargerMembres();
+        });
+
+        document.getElementById('search-input').addEventListener('input', (e) => chargerMembres(e.target.value.trim()));
+        chargerMembres();
+    </script>
+</body>
+</html>

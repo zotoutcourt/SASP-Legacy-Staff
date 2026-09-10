@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Connexion - Annuaire Staff</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white font-sans min-h-screen flex items-center justify-center">
+    <div class="bg-slate-800 p-8 rounded-lg border border-slate-700 shadow-xl w-full max-w-md space-y-6">
+        <h1 class="text-2xl font-bold text-blue-500 text-center">Connexion Staff</h1>
+        <form id="login-form" class="space-y-4">
+            <div>
+                <label class="block text-sm text-slate-400 mb-1">Mot de passe</label>
+                <input type="password" id="password" placeholder="Entrez le mot de passe" class="w-full p-3 bg-slate-700 rounded border border-slate-600 text-white" required>
+            </div>
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 p-3 rounded font-bold transition">Se connecter</button>
+            <p id="error-msg" class="text-red-500 text-sm text-center hidden">Mot de passe incorrect.</p>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const password = document.getElementById('password').value;
+            
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+                
+                const data = await res.json();
+                if (data.success) {
+                    window.location.href = '/dashboard';
+                } else {
+                    const errorMsg = document.getElementById('error-msg');
+                    errorMsg.textContent = data.message || 'Mot de passe incorrect.';
+                    errorMsg.classList.remove('hidden');
+                }
+            } catch (err) {
+                console.error("Erreur réseau :", err);
+                alert("Erreur de communication avec le serveur.");
+            }
+        });
+    </script>
+</body>
+</html>
