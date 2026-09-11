@@ -5,12 +5,12 @@ const path = require('path');
 
 const app = express();
 
-// Configuration de la base de données MySQL
+// Configuration de la base de données MySQL (dynamique pour Render ou Local)
 const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'sasp_mdt'
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'sasp_mdt'
 });
 
 db.connect(err => {
@@ -96,7 +96,7 @@ app.get('/api/membres/search', checkAuth, (req, res) => {
 
     if (q && q.trim() !== '') {
         query = `
-            SELECT id, matricule, nom_complet, discord_id, licence_compte, licence_personnage, armes, derniere_verification, statut FROM membres_staff 
+            SELECT id, matricule, nom_complet, discord_id, licence_compte, licence_personnage, armes, derniere_verification, statut, statut FROM membres_staff 
             WHERE nom_complet LIKE ? OR matricule LIKE ? OR discord_id LIKE ? OR licence_compte LIKE ? OR licence_personnage LIKE ? OR armes LIKE ? OR statut LIKE ?
             ORDER BY CAST(matricule AS UNSIGNED) ASC`;
         const searchVal = `%${q.trim()}%`;
@@ -150,4 +150,6 @@ app.delete('/api/membres/:id', checkAuth, (req, res) => {
     });
 });
 
-app.listen(3000, () => console.log('Serveur démarré sur http://localhost:3000'));
+// Lancement du serveur sur le port dynamique de Render ou 3000 en local
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Serveur démarré sur le port ${PORT}`));
