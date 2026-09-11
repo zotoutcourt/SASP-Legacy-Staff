@@ -1,4 +1,10 @@
 {
+  "name": "sasp-legacy-staff",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
   "dependencies": {
     "discord.js": "^14.27.0",
     "dotenv": "^17.4.2",
