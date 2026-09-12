@@ -8,14 +8,37 @@ const app = express();
 // Configuration de la base de données MySQL (dynamique pour Render ou Local)
 const db = mysql.createConnection({
     host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT || 3306,
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'sasp_mdt'
+    database: process.env.DB_NAME || 'sasp_mdt',
+    ssl: { rejectUnauthorized: false }
 });
 
 db.connect(err => {
-    if (err) console.error('Erreur MySQL :', err.message);
-    else console.log('Connecté à la base de données MySQL.');
+    if (err) {
+        console.error('Erreur MySQL :', err.message);
+    } else {
+        console.log('Connecté à la base de données MySQL.');
+        // Création automatique de la table si elle n'existe pas
+        const createTableQuery = `
+            CREATE TABLE IF NOT EXISTS membres_staff (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                matricule VARCHAR(50) NOT NULL UNIQUE,
+                nom_complet VARCHAR(100) NOT NULL,
+                discord_id VARCHAR(50),
+                licence_compte VARCHAR(100),
+                licence_personnage VARCHAR(100),
+                armes TEXT,
+                derniere_verification DATE,
+                statut VARCHAR(50)
+            )
+        `;
+        db.query(createTableQuery, (createErr) => {
+            if (createErr) console.error("Erreur création table :", createErr.message);
+            else console.log("Table membres_staff vérifiée/créée avec succès.");
+        });
+    }
 });
 
 // Middlewares d'analyse des requêtes
@@ -96,7 +119,7 @@ app.get('/api/membres/search', checkAuth, (req, res) => {
 
     if (q && q.trim() !== '') {
         query = `
-            SELECT id, matricule, nom_complet, discord_id, licence_compte, licence_personnage, armes, derniere_verification, statut, statut FROM membres_staff 
+            SELECT id, matricule, nom_complet, discord_id, licence_compte, licence_personnage, armes, derniere_verification, statut FROM membres_staff 
             WHERE nom_complet LIKE ? OR matricule LIKE ? OR discord_id LIKE ? OR licence_compte LIKE ? OR licence_personnage LIKE ? OR armes LIKE ? OR statut LIKE ?
             ORDER BY CAST(matricule AS UNSIGNED) ASC`;
         const searchVal = `%${q.trim()}%`;
