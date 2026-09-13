@@ -5,7 +5,6 @@ const path = require('path');
 
 const app = express();
 
-// Configuration de la base de données MySQL (dynamique pour Render ou Local)
 const db = mysql.createConnection({
     host: process.env.DB_HOST || 'localhost',
     port: process.env.DB_PORT || 3306,
@@ -20,7 +19,6 @@ db.connect(err => {
         console.error('Erreur MySQL :', err.message);
     } else {
         console.log('Connecté à la base de données MySQL.');
-        // Création automatique de la table si elle n'existe pas
         const createTableQuery = `
             CREATE TABLE IF NOT EXISTS membres_staff (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -41,25 +39,20 @@ db.connect(err => {
     }
 });
 
-// Middlewares d'analyse des requêtes
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Configuration sécurisée des sessions
 app.use(session({
     secret: 'sasp_mdt_secret_key_12345',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 } // 24 heures
+    cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 }
 }));
 
-// Servir les fichiers statiques sans donner index.html par défaut
 app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
-// Mot de passe unique pour accéder au site
 const MOT_DE_PASSE_STAFF = "SASPLegacy";
 
-// Middleware de protection
 function checkAuth(req, res, next) {
     if (req.session && req.session.isAuthenticated) {
         return next();
@@ -70,7 +63,6 @@ function checkAuth(req, res, next) {
     return res.redirect('/login.html');
 }
 
-// Route de connexion (POST)
 app.post('/api/login', (req, res) => {
     const { password } = req.body;
     if (password === MOT_DE_PASSE_STAFF) {
@@ -87,14 +79,12 @@ app.post('/api/login', (req, res) => {
     }
 });
 
-// Route de déconnexion
 app.get('/logout', (req, res) => {
     req.session.destroy(() => {
         res.redirect('/login.html');
     });
 });
 
-// Page de connexion (GET)
 app.get('/login.html', (req, res) => {
     if (req.session && req.session.isAuthenticated) {
         return res.redirect('/dashboard');
@@ -102,7 +92,6 @@ app.get('/login.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
-// Route Racine et Dashboard (protégées)
 app.get('/', checkAuth, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -111,7 +100,6 @@ app.get('/dashboard', checkAuth, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
-// API : Rechercher ou lister les membres avec statuts, dates et armes
 app.get('/api/membres/search', checkAuth, (req, res) => {
     const { q } = req.query;
     let query = `SELECT id, matricule, nom_complet, discord_id, licence_compte, licence_personnage, armes, derniere_verification, statut FROM membres_staff ORDER BY CAST(matricule AS UNSIGNED) ASC`;
@@ -135,7 +123,6 @@ app.get('/api/membres/search', checkAuth, (req, res) => {
     });
 });
 
-// API : Ajouter ou Mettre à jour un membre
 app.post('/api/membres', checkAuth, (req, res) => {
     let { discord_id, nom_complet, matricule, licence_compte, licence_personnage, armes, derniere_verification, statut } = req.body;
 
@@ -165,7 +152,6 @@ app.post('/api/membres', checkAuth, (req, res) => {
     });
 });
 
-// API : Supprimer un membre
 app.delete('/api/membres/:id', checkAuth, (req, res) => {
     db.query(`DELETE FROM membres_staff WHERE id = ?`, [req.params.id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -173,6 +159,5 @@ app.delete('/api/membres/:id', checkAuth, (req, res) => {
     });
 });
 
-// Lancement du serveur sur le port dynamique de Render ou 3000 en local
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Serveur démarré sur le port ${PORT}`));
